@@ -1,6 +1,9 @@
-# 
+# AI Voice Clone
 
-## Présentation
+## Introduction
+
+Une app qui nous répond avec notre propre voix en français, avec une latence
+de quelques secondes, mais j'y travaille encore (under dev)
 
 1. Écoute : Enregistre l'audio du micro.
 2. Transcription (Whisper) : Utilise whisper-cli ou la bibliothèque Python pour transformer l'audio en texte.
@@ -132,3 +135,7 @@ arecord -d 5 -f cd -r 24000 -c 1 ma_voix.wav
 
 ./whisper.cpp/build/bin/whisper-cli -m ~/whisper.cpp/models/ggml-base.bin -f test.wav -l fr
 ```
+
+---
+
+Enjoy it ! :koala:
