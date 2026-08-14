@@ -109,6 +109,8 @@ cd ./llama.cpp
 
 `python3 assistant.py --voice ./tester3.wav`
 
+`python3 assistant.py 2>/dev/null` (NNPACK from PyTorch hidden)
+
 ---
 
 ## Meilleure version avec fr
