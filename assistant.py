@@ -16,32 +16,83 @@ import numpy as np
 import scipy.io.wavfile
 from pocket_tts import TTSModel
 
+#qwen2.5-0.5b-q4_k_m.gguf 2048
 # ============ CONFIGURATION ============
 CONFIG = {
     "whisper_cli": "./whisper.cpp/build/bin/whisper-cli",
     "whisper_model": "./whisper.cpp/models/ggml-base.bin",
+    "whisper_threads": 4,
     "llm_url": "http://localhost:8080",
-    "llm_server_cmd": "cd ./llama.cpp && ./build/bin/llama-server -m ./models/qwen2.5-0.5b-q4_k_m.gguf -c 2048 --host 0.0.0.0 --port 8080",
+    "llm_server_cmd": "cd ./llama.cpp && ./build/bin/llama-server -m ../models/qwen2.5-1.5b-instruct-q4_k_m.gguf -c 2048 --host 0.0.0.0 --port 8080",
     "voice_ref": "./test.safetensors",
     "duration": 5,
     "language": "french_24l"
 }
 
 def clean_llm_response(text):
+    """Nettoie et formate la réponse du LLM pour la synthèse vocale."""
+    
     if not text:
         return "Je n'ai pas de réponse."
-    text = re.sub(r'-[a-zA-Z]+\s+', ' ', text)
-    text = re.sub(r'-[a-zA-Z]+$', '', text)
-    text = re.sub(r'(user|assistant|Assistant|\[\])', '', text)
-    sentences = [s.strip() for s in text.split('.') if s.strip() and len(s.strip()) > 2]
+    
+    # 1. Supprimer les tokens spéciaux du format Qwen
+    text = re.sub(r'<\|im_[a-z]+\|>', '', text)
+    text = re.sub(r'\[INST\]|\[/INST\]', '', text)
+    
+    # 2. Supprimer les marqueurs de rôle (user/assistant)
+    text = re.sub(r'\b(user|assistant|Assistant|system|System)\b\s*[:]?\s*', '', text, flags=re.IGNORECASE)
+    
+    # 3. Nettoyer les artefacts de ponctuation
+    text = re.sub(r'\s+', ' ', text)  # Multi-espaces → un seul
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)  # Espace avant ponctuation
+    
+    # 4. Supprimer les tirets de début/fin de ligne
+    text = re.sub(r'^[\s-]+|[\s-]+$', '', text)
+    
+    # 5. Découper en phrases (gère ., !, ?)
+    sentence_endings = r'[.!?]'
+    sentences = []
+    for part in re.split(sentence_endings, text):
+        part = part.strip()
+        if part and len(part) > 2 and not part.startswith(('http', 'www')):
+            sentences.append(part)
+    
     if not sentences:
         return "Je n'ai pas de réponse."
+    
+    # 6. Prendre les 2 premières phrases
     text = ". ".join(sentences[:2])
-    if not text.endswith('.'):
+    
+    # 7. Ajouter la ponctuation finale
+    if not text.endswith(('.', '!', '?')):
         text += '.'
-    if len(text) > 150:
-        text = text[:150] + "..."
+    
+    # 8. Limiter à 150 caractères (ou configurable)
+    max_length = 150
+    if len(text) > max_length:
+        # Couper au dernier espace ou ponctuation
+        cut_pos = text.rfind(' ', 0, max_length)
+        if cut_pos == -1:
+            cut_pos = max_length
+        text = text[:cut_pos] + "..."
+    
     return text
+
+# def clean_llm_response(text):
+#     if not text:
+#         return "Je n'ai pas de réponse."
+#     text = re.sub(r'-[a-zA-Z]+\s+', ' ', text)
+#     text = re.sub(r'-[a-zA-Z]+$', '', text)
+#     text = re.sub(r'(user|assistant|Assistant|\[\])', '', text)
+#     sentences = [s.strip() for s in text.split('.') if s.strip() and len(s.strip()) > 2]
+#     if not sentences:
+#         return "Je n'ai pas de réponse."
+#     text = ". ".join(sentences[:2])
+#     if not text.endswith('.'):
+#         text += '.'
+#     if len(text) > 150:
+#         text = text[:150] + "..."
+#     return text
 
 # ============ POCKET-TTS AVEC CLONAGE (API CORRECTE) ============
 class PocketTTS:
@@ -130,16 +181,7 @@ class PocketTTS:
                 except subprocess.CalledProcessError as e:
                     print(f"⚠️ Erreur lors de la lecture audio: {e}")
                     print(f"   Fichier sauvegardé: {temp_path}")
-                    return True
-                except FileNotFoundError:
-                    print("⚠️ 'aplay' non trouvé, essayez avec 'paplay' ou 'play'")
-                    try:
-                        subprocess.run(["paplay", temp_path], check=True)
-                        print("✅ Audio joué avec paplay")
-                        return True
-                    except:
-                        print(f"   Fichier sauvegardé: {temp_path}")
-                        return True
+                    return False
             else:
                 print("❌ Fichier audio trop petit")
                 return False
@@ -166,11 +208,11 @@ def listen():
         result = subprocess.run([
             "arecord", 
             "-d", str(duration), 
-            "-f", "S16_LE",        # Format 16-bit
+            "-f", "S16_LE",         # Format 16-bit
             "-r", "16000",          # 16kHz (recommandé pour Whisper)
             "-c", "1",              # Mono
             "-t", "wav",
-            temp_path              # Spécifier le fichier de sortie
+            temp_path               # Spécifier le fichier de sortie
         ], check=True, capture_output=True, text=True)
         
         # Vérifier que le fichier a été créé
@@ -201,16 +243,27 @@ def listen():
             print(f"⚠️ Erreur d'analyse audio: {e}")
         
         print("🎤 Audio enregistré, transcription en cours...")
-        
-        # Transcrire avec Whisper
+
         result = subprocess.run([
             CONFIG["whisper_cli"],
             "-m", CONFIG["whisper_model"],
             "-f", temp_path,
             "-l", "fr",
             "--no-timestamps",
+            "--no-gpu",
+            "--threads", str(CONFIG["whisper_threads"]),
             "--print-progress",
         ], capture_output=True, text=True)
+        
+        # Transcrire avec Whisper
+        # result = subprocess.run([
+        #     CONFIG["whisper_cli"],
+        #     "-m", CONFIG["whisper_model"],
+        #     "-f", temp_path,
+        #     "-l", "fr",
+        #     "--no-timestamps",
+        #     "--print-progress",
+        # ], capture_output=True, text=True)
         
         text = result.stdout.strip()
         if text:
@@ -251,18 +304,39 @@ Vous êtes un assistant utile. Répondez en une phrase courte et naturelle, sans
 <|im_start|>assistant
 """
     try:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
         response = requests.post(
             f"{CONFIG['llm_url']}/completion",
+            headers=headers,
             json={
                 "prompt": full_prompt,
-                "n_predict": 50,
-                "temperature": 0.3,
+                "n_predict": 80, # 50
+                "temperature": 0.5,
                 "top_p": 0.85,
-                "repeat_penalty": 2.0,
+                "min_p": 0.05,
+                "repeat_penalty": 1.1,
+                "frequency_penalty": 0.3,
+                "presence_penalty": 0.2,
                 "stop": ["<|im_end|>", "\nuser", "\n\n"],
-                "stream": False
+                "stream": False,
+                "cache_prompt": True,
+                "ignore_eos": False,
+                "logit_bias": []  # Pour exclure certains tokens si nécessaire
             },
-            timeout=30
+            timeout=(5.0, 30.0)  # Connexion + lecture
+            # json={
+            #     "prompt": full_prompt,
+            #     "n_predict": 50,
+            #     "temperature": 0.5,
+            #     "top_p": 0.85,
+            #     "repeat_penalty": 2.0,
+            #     "stop": ["<|im_end|>", "\nuser", "\n\n"],
+            #     "stream": False
+            # },
+            # timeout=30
         )
         
         if response.status_code == 200:

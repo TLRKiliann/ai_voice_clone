@@ -101,23 +101,17 @@ Télécharge le fichier spécifique dans le dossier ./models:
 ---
 
 ```
-/home/tester/
-├── llama.cpp/           ← Pour Qwen (LLM)
-│   ├── build/
-│   │   └── bin/
-│   │       └── llama-server
+my_project/
+├── assistant.py           # Votre script
+├── llama.cpp/            # Dossier du serveur LLM
+│   └── build/bin/llama-server
+├── models/               # ← DOSSIER MODELS À LA RACINE
+│   ├── qwen2.5-1.5b-instruct-q4_k_m.gguf  # ← Le modèle est ici !
 │   └── ...
-├── whisper.cpp/         ← Pour la reconnaissance vocale
-│   ├── build/
-│   │   └── bin/
-│   │       └── whisper-cli
-│   ├── models/
-│   │   └── ggml-base.bin
-│   └── ...
-├── models/              ← Vos modèles GGUF (partagés)
-│   ├── qwen2.5-1.5b-instruct-q4_k_m.gguf
-│   └── pocket-tts-french_24l-q8_0.gguf
-└── assistant.py         ← Votre script Python d'intégration
+├── whisper.cpp/          # Dossier Whisper
+│   ├── build/bin/whisper-cli
+│   └── models/ggml-base.bin  # ← Modèle Whisper dans son propre dossier
+└── test.safetensors      # Référence vocale
 ```
 
 ---
