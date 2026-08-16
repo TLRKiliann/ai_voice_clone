@@ -10,6 +10,8 @@ de quelques secondes, mais j'y travaille encore (under dev)
 3. Génération (Qwen) : Envoie le texte à llama.cpp pour obtenir une réponse.
 4. Synthèse (pocket-tts) : Transforme la réponse en audio pour la restituer.
 
+---
+
 ## Générer une voix clonée avec pocket-tts
 
 `pocket-tts export-voice ma_voix.wav voix_clonee.safetensors`
@@ -33,12 +35,15 @@ cmake --build build --config Release -j4
 
 ## Qwen install (GGUF)
 
+- Instruct = modèles conversationnels.
+- La version ci-dessous prend en charge le français.
+
 ```
 # Best version multi
 qwen2.5-1.5b-instruct-q4_k_m.gguf
 
 # Télécharge le fichier spécifique dans le dossier ./models
-huggingface-cli download jc-builds/Qwen2.5-1.5B-Instruct-Q4_K_M-GGUF qwen2.5-1.5b-instruct-q4_k_m.gguf --local-dir ./models
+hf download ggml/qwen2.5-1.5b-instruct-q4_k_m.gguf --local-dir ./models
 ```
 
 ---
@@ -69,9 +74,29 @@ tar xf sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
 rm sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
 ```
 
+---
+
+## Installations avec pip
+
 `pip install sherpa-onnx`
 
 `pip install pocket-tts`
+
+`pip install speechrecognition pyaudio requests numpy soundfile`
+
+---
+
+## HuggingFace
+
+Télécharge le fichier spécifique dans le dossier ./models:
+
+`hf download ggml/qwen2.5-1.5b-instruct-q4_k_m.gguf --local-dir ./models`
+
+## Remove cache with hf
+
+`hf cache ls` (lister le cache)
+
+`hf cache rm model/Qwen/Qwen2-0.5B-Instruct` (delete le model)
 
 ---
 
@@ -90,7 +115,7 @@ rm sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
 │   │   └── ggml-base.bin
 │   └── ...
 ├── models/              ← Vos modèles GGUF (partagés)
-│   ├── qwen2.5-0.5b-q4_k_m.gguf
+│   ├── qwen2.5-1.5b-instruct-q4_k_m.gguf
 │   └── pocket-tts-french_24l-q8_0.gguf
 └── assistant.py         ← Votre script Python d'intégration
 ```
@@ -102,10 +127,24 @@ rm sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
 ```
 cd ./llama.cpp
 
+# Display options 
+./build/bin/llama-server --help
+
 ./build/bin/llama-server -m ../models/qwen2.5-1.5b-instruct-q4_k_m.gguf -c 2048 --host 0.0.0.0 --port 8080
 ```
 
-## Start in front
+- Options
+
+```
+-c 2048		Équilibre entre performance et qualité
+-c 32768	Idéal pour de longs documents ou des conversations suivies
+```
+
+---
+
+## Start python script
+
+`python3 assistant.py`
 
 `python3 assistant.py --voice ./tester3.wav`
 
@@ -116,8 +155,7 @@ cd ./llama.cpp
 ## Meilleure version avec fr
 
 `qwen2.5-1.5b-instruct-q4_k_m.gguf`
-
-`pip install speechrecognition pyaudio requests numpy soundfile`
+`Qwen3.5-0.8B.GGUF`
 
 `sudo apt install pulseaudio pulseaudio-utils`
 
@@ -136,6 +174,25 @@ arecord -d 5 -f cd -r 16000 -c 1 ma_voix.wav
 arecord -d 5 -f cd -r 24000 -c 1 ma_voix.wav
 
 ./whisper.cpp/build/bin/whisper-cli -m ~/whisper.cpp/models/ggml-base.bin -f test.wav -l fr
+```
+
+---
+
+## Python3 Script
+
+"max_token" => en cours de dépréciation => "max_completion_tokens": 200 with new version.
+
+```
+{
+  "messages": [
+    { "role": "system", "content": "Vous êtes un assistant utile." },
+    { "role": "user", "content": "Bonjour, comment ça va ?" }
+  ],
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 200,
+  "stream": true
+}
 ```
 
 ---
