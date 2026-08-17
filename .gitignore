@@ -32,7 +32,7 @@ assistant_sherpa.py
 stream_test.py
 .src_sha
 .gitattributes
-./models/README.md
+models/
 
 # ============================================
 # FICHIERS COMPILÉS PYTHON
