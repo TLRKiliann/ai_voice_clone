@@ -16,8 +16,7 @@ import numpy as np
 import scipy.io.wavfile
 from pocket_tts import TTSModel
 
-#qwen2.5-0.5b-q4_k_m.gguf 2048
-# ============ CONFIGURATION ============
+# qwen2.5-1.5b-instruct-q4_k_m.gguf -c 2048
 CONFIG = {
     "whisper_cli": "./whisper.cpp/build/bin/whisper-cli",
     "whisper_model": "./whisper.cpp/models/ggml-base.bin",
@@ -26,7 +25,8 @@ CONFIG = {
     "llm_server_cmd": "cd ./llama.cpp && ./build/bin/llama-server -m ../models/qwen2.5-1.5b-instruct-q4_k_m.gguf -c 2048 --host 0.0.0.0 --port 8080",
     "voice_ref": "./test.safetensors",
     "duration": 5,
-    "language": "french_24l"
+    "language": "french_24l",
+    "quantize": True
 }
 
 def clean_llm_response(text):
@@ -78,39 +78,29 @@ def clean_llm_response(text):
     
     return text
 
-# def clean_llm_response(text):
-#     if not text:
-#         return "Je n'ai pas de réponse."
-#     text = re.sub(r'-[a-zA-Z]+\s+', ' ', text)
-#     text = re.sub(r'-[a-zA-Z]+$', '', text)
-#     text = re.sub(r'(user|assistant|Assistant|\[\])', '', text)
-#     sentences = [s.strip() for s in text.split('.') if s.strip() and len(s.strip()) > 2]
-#     if not sentences:
-#         return "Je n'ai pas de réponse."
-#     text = ". ".join(sentences[:2])
-#     if not text.endswith('.'):
-#         text += '.'
-#     if len(text) > 150:
-#         text = text[:150] + "..."
-#     return text
-
-# ============ POCKET-TTS AVEC CLONAGE (API CORRECTE) ============
+# ============ POCKET-TTS AVEC CLONAGE ============
 class PocketTTS:
-    def __init__(self, voice_ref=None, language="french_24l"):
+    def __init__(self, voice_ref=None, language="french_24l", quantize=True):
         """Initialise Pocket-TTS avec clonage vocal"""
         self.voice_ref = voice_ref
         self.language = language
+        self.quantize = quantize
         self.model = None
         self.voice_state = None
         
         print("🔧 Initialisation de Pocket-TTS...")
+        print(f"🔧 Configuration TTS: language={self.language}, quantize={self.quantize}")
+
         self._init_tts()
     
     def _init_tts(self):
         """Initialise le moteur TTS avec les bonnes méthodes"""
         try:
             print("📦 Chargement du modèle TTS avec load_model()...")
-            self.model = TTSModel.load_model(language=self.language)
+            self.model = TTSModel.load_model(
+                language=self.language,
+                quantize=self.quantize
+            )
             print("✅ Pocket-TTS initialisé avec succès")
             
             if self.model:
@@ -166,13 +156,13 @@ class PocketTTS:
             
             print(f"💾 Sauvegarde de l'audio ({len(audio_data)} échantillons)...")
             sf.write(temp_path, audio_data, self.model.sample_rate)
-            
-            # Vérifier la taille du fichier
+
+            time.sleep(0.1)
+
             file_size = os.path.getsize(temp_path)
             print(f"   Taille du fichier: {file_size} octets")
             
             if file_size > 1000:
-                # Jouer l'audio
                 print("🔊 Lecture de l'audio...")
                 try:
                     subprocess.run(["aplay", temp_path], check=True)
@@ -191,6 +181,13 @@ class PocketTTS:
             import traceback
             traceback.print_exc()
             return False
+        finally:
+            try:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                    print("🧹 Fichier temporaire supprimé")
+            except:
+                pass
 
 # ============ COMPOSANTS (LISTEN, THINK, ASSISTANT) ============
 def listen():
@@ -255,16 +252,6 @@ def listen():
             "--print-progress",
         ], capture_output=True, text=True)
         
-        # Transcrire avec Whisper
-        # result = subprocess.run([
-        #     CONFIG["whisper_cli"],
-        #     "-m", CONFIG["whisper_model"],
-        #     "-f", temp_path,
-        #     "-l", "fr",
-        #     "--no-timestamps",
-        #     "--print-progress",
-        # ], capture_output=True, text=True)
-        
         text = result.stdout.strip()
         if text:
             print(f"📝 Vous: {text}")
@@ -313,7 +300,7 @@ Vous êtes un assistant utile. Répondez en une phrase courte et naturelle, sans
             headers=headers,
             json={
                 "prompt": full_prompt,
-                "n_predict": 80, # 50
+                "n_predict": 80, # 50 standard
                 "temperature": 0.5,
                 "top_p": 0.85,
                 "min_p": 0.05,
@@ -327,16 +314,6 @@ Vous êtes un assistant utile. Répondez en une phrase courte et naturelle, sans
                 "logit_bias": []  # Pour exclure certains tokens si nécessaire
             },
             timeout=(5.0, 30.0)  # Connexion + lecture
-            # json={
-            #     "prompt": full_prompt,
-            #     "n_predict": 50,
-            #     "temperature": 0.5,
-            #     "top_p": 0.85,
-            #     "repeat_penalty": 2.0,
-            #     "stop": ["<|im_end|>", "\nuser", "\n\n"],
-            #     "stream": False
-            # },
-            # timeout=30
         )
         
         if response.status_code == 200:
@@ -375,7 +352,8 @@ class VocalAssistant:
         print("="*50)
         self.tts = PocketTTS(
             voice_ref=CONFIG["voice_ref"],
-            language=CONFIG["language"]
+            language=CONFIG["language"],
+            quantize=CONFIG["quantize"]
         )
         
         if self.tts.model and self.tts.voice_state is not None:
