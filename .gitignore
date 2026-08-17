@@ -20,7 +20,7 @@ venv/
 # ============================================
 *.safetensors
 *.bin
-#*.gguf
+*.gguf
 *.pt
 *.pth
 *.onnx
@@ -30,7 +30,9 @@ assistant2.py
 assistant3.py
 assistant_sherpa.py
 stream_test.py
-
+.src_sha
+.gitattributes
+./models/README.md
 
 # ============================================
 # FICHIERS COMPILÉS PYTHON
