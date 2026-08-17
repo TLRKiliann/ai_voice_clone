@@ -26,11 +26,6 @@ venv/
 *.onnx
 *.h5
 *.pb
-assistant2.py
-assistant3.py
-assistant_sherpa.py
-stream_test.py
-.src_sha
 .gitattributes
 models/**
 
