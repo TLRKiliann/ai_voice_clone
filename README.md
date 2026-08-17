@@ -150,7 +150,7 @@ cd ./llama.cpp
 
 ---
 
-:snake: ## Start python script
+## :snake: Start python script
 
 `python3 assistant.py`
 
