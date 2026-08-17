@@ -65,10 +65,3 @@ htmlcov/
 .env
 .env.local
 *.local
-
-# ============================================
-# OPTIONNEL : Si vous NE voulez PAS versionner llama.cpp/whisper.cpp
-# (décommentez les lignes ci-dessous si besoin)
-# ============================================
-# llama.cpp/
-# whisper.cpp/
