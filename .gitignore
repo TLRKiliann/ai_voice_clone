@@ -20,7 +20,7 @@ venv/
 # ============================================
 *.safetensors
 *.bin
-*.gguf
+#*.gguf
 *.pt
 *.pth
 *.onnx
