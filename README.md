@@ -64,9 +64,13 @@ cd ~/whisper.cpp
 # Meilleure version multi (Qwen3 à tester et Qwen3.5 payante) 
 qwen2.5-1.5b-instruct-q4_k_m.gguf (instruct=modèle conversationnels)
 
-# Télécharge le fichier spécifique dans le dossier ./models
-hf download ggml/qwen2.5-1.5b-instruct-q4_k_m.gguf --local-dir ./models
+# Download
+wget -O ../models/qwen2.5-1.5b-instruct-q4_k_m.gguf https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
 ```
+
+- Dans le navigateur on peut utiliser Qwen pour interagir avec: 
+
+`http://localhost:8080`
 
 ---
 
@@ -122,7 +126,7 @@ Et de réutiliser `.safetensors` dans le script python `assistant.py` (réductio
 
 - Télécharge le fichier spécifique dans le dossier `./models`:
 
-`hf download ggml/qwen2.5-1.5b-instruct-q4_k_m.gguf --local-dir ./models`
+`hf download ggml/qwen2.5-0.5b-example.gguf --local-dir ./models`
 
 - Supprimer le cache avec hf
 
@@ -154,11 +158,17 @@ cd ./llama.cpp
 
 ## :snake: Start python script
 
-`python3 assistant.py`
+- Différentes options:
 
-`python3 assistant.py --voice ./tester3.wav`
+`python3 assistant.py` (standard)
 
-`python3 assistant.py 2>/dev/null` (NNPACK's bug from PyTorch hidden)
+`python3 assistant.py --duration 10` (10 secondes pour parler)
+
+`python3 assistant.py --voice ./tester3.wav` (choix du fichier .wav ou .safetensors)
+
+`python3 assistant.py 2>/dev/null` (cacher les erreur NNPACK de PyTorch)
+
+- Exemple: `python3 assistant.py --duration 10 2>/dev/null`
 
 ---
 
@@ -195,26 +205,17 @@ arecord -d 5 -f cd -r 24000 -c 1 ma_voix.wav
 
 ---
 
-## Python3 Script
+## :gift: Extra
 
-"max_token" => en cours de dépréciation => "max_completion_tokens": 200 with new version.
+- Model de raisonnement encore plus poussé avec DeepSeek:
 
 ```
-{
-  "messages": [
-    { "role": "system", "content": "Vous êtes un assistant utile." },
-    { "role": "user", "content": "Bonjour, comment ça va ?" }
-  ],
-  "temperature": 0.7,
-  "top_p": 0.9,
-  "max_tokens": 200,
-  "stream": true
-}
+cd llama.cpp
+
+wget -O ../models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+
+./build/bin/llama-server -m ../models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf -c 2048 --host 0.0.0.0 --port 8080
 ```
-
----
-
-- under dev (je travaille avec l'option --quantize)
 
 ---
 
