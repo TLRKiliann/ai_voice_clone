@@ -218,4 +218,4 @@ arecord -d 5 -f cd -r 24000 -c 1 ma_voix.wav
 
 ---
 
-Enjoy it ! :koala: :bowtie:
+Enjoy it ! :koala:
