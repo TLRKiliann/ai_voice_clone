@@ -1,6 +1,6 @@
 # AI Voice Clone (STT - LLM - TTS)
 
-## Introduction
+## :boom: Introduction
 
 Assistant vocal qui vous écoute et qui vous répond avec une voix clonée (de votre choix).
 
@@ -14,7 +14,11 @@ Assistant vocal qui vous écoute et qui vous répond avec une voix clonée (de v
 
 ---
 
-## Installation
+## :scroll: Installation
+
+- Prérequis (cmd pour faire des tests à la fin de cette page)
+
+`sudo apt install pulseaudio pulseaudio-utils`
 
 - Création d'un environnement virtuel:
 
@@ -25,7 +29,7 @@ source /venv/bin/activate
 
 ---
 
-## LLama install (GGUF)
+## :busts_in_silhouette: LLama install (GGUF)
 
 - Le serveur
 
@@ -38,7 +42,7 @@ cmake --build build --config Release -j4
 
 ---
 
-## Whisper install (ggml => GGUF)
+## :microphone: Whisper install (ggml => GGUF) :pen:
 
 ```
 git clone https://github.com/ggml-org/whisper.cpp.git
@@ -52,7 +56,7 @@ cd ~/whisper.cpp
 
 ---
 
-## Qwen install (GGUF)
+## :envelope: Qwen install (GGUF)
 
 - La version de Qwen ci-dessous prend en charge le français.
 
@@ -82,9 +86,7 @@ rm sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
 
 ---
 
-`sudo apt install pulseaudio pulseaudio-utils`
-
-## Installations avec pip
+## :nazar_amulet: Installations avec pip
 
 `pip install sherpa-onnx`
 
@@ -94,7 +96,7 @@ rm sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
 
 ---
 
-## Générer une voix clonée avec pocket-tts
+## :sound: Générer une voix clonée avec pocket-tts
 
 Créer un fichier `ma_voix.wav` ou utiliser un fichier `.wav`.
 
@@ -110,7 +112,7 @@ Et de réutiliser `.safetensors` dans le script python `assistant.py` (réductio
 
 ---
 
-## HuggingFace
+## :hugs: HuggingFace
 
 - Quelques commandes:
 
@@ -130,7 +132,7 @@ Et de réutiliser `.safetensors` dans le script python `assistant.py` (réductio
 
 ---
 
-## Start server
+## :atom: Start server
 
 ```
 cd ./llama.cpp
@@ -216,4 +218,4 @@ arecord -d 5 -f cd -r 24000 -c 1 ma_voix.wav
 
 ---
 
-Enjoy it ! :koala:
+Enjoy it ! :koala: :bowtie:
