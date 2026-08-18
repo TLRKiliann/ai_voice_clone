@@ -18,9 +18,11 @@ Assistant vocal qui vous écoute et qui vous répond avec une voix clonée (de v
 
 - Prérequis (cmd pour faire des tests à la fin de cette page)
 
-`sudo apt update`
-`sudo apt install build-essential cmake`
-`sudo apt install pulseaudio pulseaudio-utils ffmpeg`
+```
+sudo apt update
+sudo apt install build-essential cmake
+sudo apt install pulseaudio pulseaudio-utils ffmpeg
+```
 
 - Création d'un environnement virtuel:
 
