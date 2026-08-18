@@ -18,14 +18,20 @@ Assistant vocal qui vous écoute et qui vous répond avec une voix clonée (de v
 
 - Prérequis (cmd pour faire des tests à la fin de cette page)
 
-`sudo apt install pulseaudio pulseaudio-utils`
+`sudo apt update`
+`sudo apt install build-essential cmake`
+`sudo apt install pulseaudio pulseaudio-utils ffmpeg`
 
 - Création d'un environnement virtuel:
 
 ```
 python3 -m venv myenv
-source /venv/bin/activate
+source myvenv/bin/activate
 ```
+
+- Créer le dossier models pour Qwen:
+
+`mkdir models`
 
 ---
 
@@ -38,6 +44,9 @@ git clone https://github.com/ggerganov/llama.cpp.git
 cd llama.cpp
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release -j4
+
+# Display options 
+./build/bin/llama-server --help
 ```
 
 ---
@@ -48,10 +57,14 @@ cmake --build build --config Release -j4
 git clone https://github.com/ggml-org/whisper.cpp.git
 cd whisper.cpp
 cmake -B build && cmake --build build -j --config Release
-cd ~/whisper.cpp
 ./models/download-ggml-model.sh base
 
+# Display options 
 ./build/bin/whisper-cli -m models/ggml-base.bin --help
+
+# Reconnaissance vocale pour la retranscription par écrit
+# (on en a pas besoin, la cmd est intégrée dans le code assistant.py)
+./whisper-cli -m models/ggml-base.bin -f votre_fichier.wav -l fr
 ```
 
 ---
@@ -74,27 +87,9 @@ wget -O ../models/qwen2.5-1.5b-instruct-q4_k_m.gguf https://huggingface.co/Qwen/
 
 ---
 
-## Sherpa-onnx install (optionnel)
-
-- Personnellement, pas très convaincu...
-
-```
-wget https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
-
-# Extraire l'archive dans le dossier ./models:
-tar xf sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
-
-# Supprimer l'archive pour économiser de l'espace
-rm sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2
-```
-
----
-
 ## :nazar_amulet: Installations avec pip
 
-`pip install sherpa-onnx`
-
-`pip install pocket-tts`
+`pip install pocket-tts[quantize]`
 
 `pip install speechrecognition pyaudio requests numpy soundfile`
 
@@ -106,7 +101,7 @@ Créer un fichier `ma_voix.wav` ou utiliser un fichier `.wav`.
 
 Génération d'un fichier `.safetensors`:
 
-`pocket-tts export-voice ma_voix.wav voix_clonee.safetensors`
+`pocket-tts export-voice ma_voix.wav clone.safetensors`
 
 La latence est réduite en utilisant la commande suivante avec `.safetensors`:
 
@@ -140,9 +135,6 @@ Et de réutiliser `.safetensors` dans le script python `assistant.py` (réductio
 
 ```
 cd ./llama.cpp
-
-# Display options 
-./build/bin/llama-server --help
 
 ./build/bin/llama-server -m ../models/qwen2.5-1.5b-instruct-q4_k_m.gguf -c 2048 --host 0.0.0.0 --port 8080
 ```
@@ -188,7 +180,7 @@ my_project/
 
 ---
 
-## Sound tests
+## :sound: Sound tests
 
 ```
 # list audio drivers
